@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AT%XBANDLOCK 88-Band Calculator</title>
+    <style>
+        :root { --primary: #005a9c; --bg: #f8f9fa; --dark: #212529; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--dark); max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; }
+        h1 { margin-top: 0; color: var(--primary); font-size: 1.5rem; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        label { font-weight: bold; font-size: 0.9rem; }
+        
+        .band-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)); gap: 6px; margin-bottom: 25px; }
+        .band-btn { padding: 8px 2px; border: 1px solid #dee2e6; background: #fff; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
+        .band-btn:hover { border-color: var(--primary); background: #f0f7ff; }
+        .band-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .preset-btn { padding: 6px 12px; font-size: 0.8rem; background: #e9ecef; border: none; border-radius: 20px; cursor: pointer; transition: 0.2s; }
+        .preset-btn:hover { background: #dee2e6; }
+
+        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 1rem; margin-bottom: 25px; outline: none; }
+        input[type="text"]:focus { border-color: var(--primary); }
+
+        .output-container { background: #212529; color: #00ff41; padding: 20px; border-radius: 8px; position: relative; }
+        .output-label { color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 8px; display: block; }
+        #commandOutput { font-family: monospace; font-size: 1.1rem; word-break: break-all; line-height: 1.4; }
+        
+        .actions { margin-top: 15px; display: flex; gap: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-copy { background: #28a745; color: white; }
+        .btn-copy:hover { background: #218838; }
+        .btn-clear { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>nRF9160 / nRF9161 Bandlock Calculator (88-bit)</h1>
+
+    <div class="label-row">
+        <label>Common Carrier Presets:</label>
+    </div>
+    <div class="presets">
+        <button class="preset-btn" onclick="applyPreset([2,4,5,12,17,66])">AT&T (US)</button>
+        <button class="preset-btn" onclick="applyPreset([4,13])">Verizon (US)</button>
+        <button class="preset-btn" onclick="applyPreset([2,4,12,66,71])">T-Mobile (US)</button>
+        <button class="preset-btn" onclick="applyPreset([1,3,8,20,28])">Europe / Global</button>
+        <button class="preset-btn" onclick="applyPreset([1,3,5,8,18,19,26,28])">Japan / APAC</button>
+    </div>
+
+    <div class="label-row"><label>Toggle LTE Bands:</label></div>
+    <div id="bandGrid" class="band-grid"></div>
+
+    <div class="label-row"><label>Comma Separated List:</label></div>
+    <input type="text" id="manualInput" placeholder="Enter bands (e.g. 1, 2, 3...)" oninput="syncFromInput()">
+
+    <div class="output-container">
+        <span class="output-label">Generated AT Command</span>
+        <div id="commandOutput">AT%XBANDLOCK=1,"0"</div>
+        <div class="actions">
+            <button class="btn btn-copy" onclick="copyCommand()">Copy Command</button>
+            <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const MAX_BANDS = 88;
+    const grid = document.getElementById('bandGrid');
+    const input = document.getElementById('manualInput');
+    const output = document.getElementById('commandOutput');
+    let selected = new Set();
+
+    // Init Grid
+    for (let i = 1; i <= MAX_BANDS; i++) {
+        const b = document.createElement('button');
+        b.className = 'band-btn';
+        b.innerText = i;
+        b.id = `b-${i}`;
+        b.onclick = () => toggleBand(i);
+        grid.appendChild(b);
+    }
+
+    function toggleBand(num) {
+        selected.has(num) ? selected.delete(num) : selected.add(num);
+        update();
+    }
+
+    function applyPreset(bands) {
+        selected = new Set(bands);
+        update();
+    }
+
+    function syncFromInput() {
+        const val = input.value.split(',').map(v => parseInt(v.trim())).filter(n => !isNaN(n) && n > 0 && n <= MAX_BANDS);
+        selected = new Set(val);
+        update(false);
+    }
+
+    function clearAll() {
+        selected.clear();
+        update();
+    }
+
+    function update(updateText = true) {
+        // Update Buttons
+        document.querySelectorAll('.band-btn').forEach(btn => {
+            const id = parseInt(btn.innerText);
+            btn.classList.toggle('active', selected.has(id));
+        });
+
+        // Update Text Input
+        if (updateText) {
+            input.value = Array.from(selected).sort((a,b) => a-b).join(', ');
+        }
+
+        // Generate Bitmap
+        if (selected.size === 0) {
+            output.innerText = 'AT%XBANDLOCK=1,"0"';
+            return;
+        }
+
+        let bits = new Array(MAX_BANDS).fill(0);
+        selected.forEach(b => bits[b-1] = 1);
+        const bitString = bits.reverse().join('').replace(/^0+(?!$)/, ''); // Remove leading zeros
+        output.innerText = `AT%XBANDLOCK=1,"${bitString}"`;
+    }
+
+    function copyCommand() {
+        navigator.clipboard.writeText(output.innerText);
+        alert("Command copied to clipboard!");
+    }
+</script>
+
+</body>
+</html>
