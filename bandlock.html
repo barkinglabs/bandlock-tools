@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AT%XBANDLOCK 88-Band Calculator</title>
+    <title>Bandlock Calculator</title>
     <style>
         :root { --primary: #005a9c; --bg: #f8f9fa; --dark: #212529; }
         body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--dark); max-width: 1000px; margin: 40px auto; padding: 0 20px; }
@@ -41,14 +41,13 @@
     <h1>nRF9160 / nRF9161 Bandlock Calculator (88-bit)</h1>
 
     <div class="label-row">
-        <label>Common Carrier Presets:</label>
+        <label>Fi Carrier Presets:</label>
     </div>
     <div class="presets">
-        <button class="preset-btn" onclick="applyPreset([2,4,5,12,17,66])">AT&T (US)</button>
+        <button class="preset-btn" onclick="applyPreset([2,4,12])">AT&T (US)</button>
         <button class="preset-btn" onclick="applyPreset([4,13])">Verizon (US)</button>
-        <button class="preset-btn" onclick="applyPreset([2,4,12,66,71])">T-Mobile (US)</button>
-        <button class="preset-btn" onclick="applyPreset([1,3,8,20,28])">Europe / Global</button>
-        <button class="preset-btn" onclick="applyPreset([1,3,5,8,18,19,26,28])">Japan / APAC</button>
+        <button class="preset-btn" onclick="applyPreset([2, 4, 12, 25, 66])">T-Mobile (US)</button>
+        <button class="preset-btn" onclick="applyPreset([1,2,3,4,5,8,12,13,20,25,26,28,66,85])">International</button>
     </div>
 
     <div class="label-row"><label>Toggle LTE Bands:</label></div>
