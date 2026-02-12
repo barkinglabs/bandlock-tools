@@ -57,6 +57,9 @@
     <div class="label-row"><label>Comma Separated List:</label></div>
     <input type="text" id="manualInput" placeholder="Enter bands (e.g. 1, 2, 3...)" oninput="syncFromInput()">
 
+    <div class="label-row"><label>Binary Bitmap (octal escape format):</label></div>
+    <input type="text" id="bitmapInput" placeholder='e.g. \237\030\010\013\000\000\000\000\002\000\020' oninput="syncFromBitmap()">
+
     <div class="output-container">
         <span class="output-label">Generated AT Command</span>
         <div id="commandOutput">AT%XBANDLOCK=1,"0"</div>
@@ -105,7 +108,54 @@
         update();
     }
 
-    function update(updateText = true) {
+    function parseOctalBitmap(str, str_len) {
+        const bytes = [];
+        let i = 0;
+        while (i < str_len) {
+            if (str[i] === '\\' && i + 1 < str_len) {
+                let octalStr = '';
+                let j = i + 1;
+                while (j < str_len && j < i + 4 && str[j] >= '0' && str[j] <= '7') {
+                    octalStr = octalStr + str[j];
+                    j++;
+                }
+                if (octalStr.length > 0) {
+                    bytes.push(parseInt(octalStr, 8));
+                    i = j;
+                } else {
+                    i++;
+                }
+            } else {
+                bytes.push(str.charCodeAt(i));
+                i++;
+            }
+        }
+        return bytes;
+    }
+
+    function syncFromBitmap() {
+        const bitmapInput = document.getElementById('bitmapInput');
+        let str = bitmapInput.value.trim();
+        if (str.length >= 2 && str[0] === '"' && str[str.length - 1] === '"') {
+            str = str.substring(1, str.length - 1);
+        }
+        const bytes = parseOctalBitmap(str, str.length);
+        selected = new Set();
+        for (let i = 0; i < bytes.length; i++) {
+            for (let j = 0; j < 8; j++) {
+                const bandNum = i * 8 + j + 1;
+                if (bandNum > MAX_BANDS) {
+                    break;
+                }
+                if ((bytes[i] & (1 << j)) !== 0) {
+                    selected.add(bandNum);
+                }
+            }
+        }
+        update(true, false);
+    }
+
+    function update(updateText = true, updateBitmap = true) {
         // Update Buttons
         document.querySelectorAll('.band-btn').forEach(btn => {
             const id = parseInt(btn.innerText);
@@ -115,6 +165,11 @@
         // Update Text Input
         if (updateText) {
             input.value = Array.from(selected).sort((a,b) => a-b).join(', ');
+        }
+
+        // Clear Bitmap Input
+        if (updateBitmap) {
+            document.getElementById('bitmapInput').value = '';
         }
 
         // Generate Bitmap
