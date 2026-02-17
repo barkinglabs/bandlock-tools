@@ -20,6 +20,7 @@
         .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
         .preset-btn { padding: 6px 12px; font-size: 0.8rem; background: #e9ecef; border: none; border-radius: 20px; cursor: pointer; transition: 0.2s; }
         .preset-btn:hover { background: #dee2e6; }
+        .preset-btn.active { background: var(--primary); color: white; box-shadow: 0 0 0 2px white, 0 0 0 4px var(--primary); }
 
         input[type="text"], textarea { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 1rem; margin-bottom: 25px; outline: none; box-sizing: border-box; }
         input[type="text"]:focus, textarea:focus { border-color: var(--primary); }
@@ -89,6 +90,25 @@
     const input = document.getElementById('manualInput');
     const output = document.getElementById('commandOutput');
     let selected = new Set();
+
+    const PRESETS = [
+        { bands: [2, 4, 12] },
+        { bands: [4, 13] },
+        { bands: [2, 4, 12, 25, 66] },
+        { bands: [1, 2, 3, 4, 5, 8, 12, 13, 20, 25, 26, 28, 66, 85] }
+    ];
+
+    function setsMatch(currentSet, presetBands, presetBandsLength) {
+        if (currentSet.size !== presetBandsLength) {
+            return false;
+        }
+        for (let i = 0; i < presetBandsLength; i++) {
+            if (currentSet.has(presetBands[i]) === false) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     // Init Grid
     for (let i = 1; i <= MAX_BANDS; i++) {
@@ -214,6 +234,17 @@
             const id = parseInt(btn.innerText);
             btn.classList.toggle('active', selected.has(id));
         });
+
+        // Update Preset Buttons
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        for (let i = 0; i < presetButtons.length; i++) {
+            const isMatch = setsMatch(selected, PRESETS[i].bands, PRESETS[i].bands.length);
+            if (isMatch === true) {
+                presetButtons[i].classList.add('active');
+            } else {
+                presetButtons[i].classList.remove('active');
+            }
+        }
 
         // Update Text Input
         if (updateText) {
