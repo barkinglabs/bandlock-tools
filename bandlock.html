@@ -21,8 +21,9 @@
         .preset-btn { padding: 6px 12px; font-size: 0.8rem; background: #e9ecef; border: none; border-radius: 20px; cursor: pointer; transition: 0.2s; }
         .preset-btn:hover { background: #dee2e6; }
 
-        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 1rem; margin-bottom: 25px; outline: none; }
-        input[type="text"]:focus { border-color: var(--primary); }
+        input[type="text"], textarea { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 1rem; margin-bottom: 25px; outline: none; box-sizing: border-box; }
+        input[type="text"]:focus, textarea:focus { border-color: var(--primary); }
+        textarea { height: 120px; resize: vertical; font-family: monospace; }
 
         .output-container { background: #212529; color: #00ff41; padding: 20px; border-radius: 8px; position: relative; }
         .output-label { color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 8px; display: block; }
@@ -58,6 +59,19 @@
 
     <div class="label-row"><label>Binary Bitmap (octal escape format):</label></div>
     <input type="text" id="bitmapInput" placeholder='e.g. \237\030\010\013\000\000\000\000\002\000\020' oninput="syncFromBitmap()">
+
+    <div class="label-row"><label>Indexed Byte List (decimal):</label></div>
+    <textarea id="indexedBytesInput" placeholder="0:159
+1:24
+2:8
+3:11
+4:0
+5:0
+6:0
+7:0
+8:2
+9:0
+10:16" oninput="syncFromIndexedBytes()"></textarea>
 
     <div class="output-container">
         <span class="output-label">Generated AT Command</span>
@@ -151,10 +165,50 @@
                 }
             }
         }
-        update(true, false);
+        update(true, false, true);
     }
 
-    function update(updateText = true, updateBitmap = true) {
+    function parseIndexedBytes(str, str_len) {
+        const bytes = new Array(11).fill(0);
+        const lines = str.substring(0, str_len).split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.length === 0) {
+                continue;
+            }
+            const colonPos = line.indexOf(':');
+            if (colonPos === -1) {
+                continue;
+            }
+            const index = parseInt(line.substring(0, colonPos), 10);
+            const value = parseInt(line.substring(colonPos + 1), 10);
+            if (isNaN(index) === false && isNaN(value) === false && index >= 0 && index <= 10 && value >= 0 && value <= 255) {
+                bytes[index] = value;
+            }
+        }
+        return bytes;
+    }
+
+    function syncFromIndexedBytes() {
+        const indexedInput = document.getElementById('indexedBytesInput');
+        const str = indexedInput.value;
+        const bytes = parseIndexedBytes(str, str.length);
+        selected = new Set();
+        for (let i = 0; i < bytes.length; i++) {
+            for (let j = 0; j < 8; j++) {
+                const bandNum = i * 8 + j + 1;
+                if (bandNum > MAX_BANDS) {
+                    break;
+                }
+                if ((bytes[i] & (1 << j)) !== 0) {
+                    selected.add(bandNum);
+                }
+            }
+        }
+        update(true, true, false);
+    }
+
+    function update(updateText = true, updateBitmap = true, updateIndexedBytes = true) {
         // Update Buttons
         document.querySelectorAll('.band-btn').forEach(btn => {
             const id = parseInt(btn.innerText);
@@ -169,6 +223,11 @@
         // Clear Bitmap Input
         if (updateBitmap) {
             document.getElementById('bitmapInput').value = '';
+        }
+
+        // Clear Indexed Bytes Input
+        if (updateIndexedBytes) {
+            document.getElementById('indexedBytesInput').value = '';
         }
 
         // Generate Bitmap
