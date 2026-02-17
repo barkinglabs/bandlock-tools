@@ -166,6 +166,44 @@
         return bytes;
     }
 
+    function selectedToBytes(selectedSet, selectedSetSize, byteCount) {
+        const bytes = new Array(byteCount).fill(0);
+        if (selectedSetSize === 0) {
+            return bytes;
+        }
+        selectedSet.forEach(function(bandNum) {
+            const byteIndex = Math.floor((bandNum - 1) / 8);
+            const bitPosition = (bandNum - 1) % 8;
+            if (byteIndex >= 0 && byteIndex < byteCount) {
+                bytes[byteIndex] = bytes[byteIndex] | (1 << bitPosition);
+            }
+        });
+        return bytes;
+    }
+
+    function bytesToOctalBitmap(bytes, bytesLength) {
+        let result = '';
+        for (let i = 0; i < bytesLength; i++) {
+            let octalStr = bytes[i].toString(8);
+            while (octalStr.length < 3) {
+                octalStr = '0' + octalStr;
+            }
+            result = result + '\\' + octalStr;
+        }
+        return result;
+    }
+
+    function bytesToIndexedByteList(bytes, bytesLength) {
+        let result = '';
+        for (let i = 0; i < bytesLength; i++) {
+            if (i > 0) {
+                result = result + '\n';
+            }
+            result = result + i.toString(10) + ':' + bytes[i].toString(10);
+        }
+        return result;
+    }
+
     function syncFromBitmap() {
         const bitmapInput = document.getElementById('bitmapInput');
         let str = bitmapInput.value.trim();
@@ -251,14 +289,24 @@
             input.value = Array.from(selected).sort((a,b) => a-b).join(', ');
         }
 
-        // Clear Bitmap Input
+        // Update Bitmap and Indexed Bytes Inputs
+        const BYTE_COUNT = 11;
+        const bytes = selectedToBytes(selected, selected.size, BYTE_COUNT);
+
         if (updateBitmap) {
-            document.getElementById('bitmapInput').value = '';
+            if (selected.size === 0) {
+                document.getElementById('bitmapInput').value = '';
+            } else {
+                document.getElementById('bitmapInput').value = bytesToOctalBitmap(bytes, BYTE_COUNT);
+            }
         }
 
-        // Clear Indexed Bytes Input
         if (updateIndexedBytes) {
-            document.getElementById('indexedBytesInput').value = '';
+            if (selected.size === 0) {
+                document.getElementById('indexedBytesInput').value = '';
+            } else {
+                document.getElementById('indexedBytesInput').value = bytesToIndexedByteList(bytes, BYTE_COUNT);
+            }
         }
 
         // Generate Bitmap
