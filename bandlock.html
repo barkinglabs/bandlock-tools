@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bandlock Calculator</title>
+    <title>Band Lock Calculator</title>
     <style>
         :root { --primary: #005a9c; --bg: #f8f9fa; --dark: #212529; }
         body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--dark); max-width: 1000px; margin: 40px auto; padding: 0 20px; }
@@ -28,7 +28,7 @@
 
         .output-container { background: #212529; color: #00ff41; padding: 20px; border-radius: 8px; position: relative; }
         .output-label { color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 8px; display: block; }
-        #commandOutput { font-family: monospace; font-size: 1.1rem; word-break: break-all; line-height: 1.4; }
+        #nrfCommandOutput, #eg91CommandOutput { font-family: monospace; font-size: 1.1rem; word-break: break-all; line-height: 1.4; }
         
         .actions { margin-top: 15px; display: flex; gap: 10px; }
         .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
@@ -40,7 +40,7 @@
 <body>
 
 <div class="card">
-    <h1>nRF9160 / nRF9161 Bandlock Calculator (88-bit)</h1>
+    <h1>Band Lock Calculator</h1>
 
     <div class="label-row">
         <label>Fi Carrier Presets:</label>
@@ -74,13 +74,27 @@
 9:0
 10:16" oninput="syncFromIndexedBytes()"></textarea>
 
+    <div class="label-row"><label>Hex Band Value:</label></div>
+    <input type="text" id="hexInput" placeholder='e.g. 0x2000000000100080A' oninput="syncFromHex()">
+
     <div class="output-container">
-        <span class="output-label">Generated AT Command</span>
-        <div id="commandOutput">AT%XBANDLOCK=1,"0"</div>
+        <span class="output-label">nRF9160 / nRF9161</span>
+        <div id="nrfCommandOutput">AT%XBANDLOCK=1,"0"</div>
         <div class="actions">
-            <button class="btn btn-copy" onclick="copyCommand()">Copy Command</button>
-            <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+            <button class="btn btn-copy" onclick="copyCommand('nrfCommandOutput')">Copy Command</button>
         </div>
+    </div>
+
+    <div class="output-container" style="margin-top: 10px;">
+        <span class="output-label">Quectel EG91</span>
+        <div id="eg91CommandOutput">AT+QCFG="band",0,0x0</div>
+        <div class="actions">
+            <button class="btn btn-copy" onclick="copyCommand('eg91CommandOutput')">Copy Command</button>
+        </div>
+    </div>
+
+    <div style="margin-top: 10px;">
+        <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
     </div>
 </div>
 
@@ -88,8 +102,9 @@
     const MAX_BANDS = 88;
     const grid = document.getElementById('bandGrid');
     const input = document.getElementById('manualInput');
-    const output = document.getElementById('commandOutput');
     let selected = new Set();
+    const nrfOutput = document.getElementById('nrfCommandOutput');
+    const eg91Output = document.getElementById('eg91CommandOutput');
 
     const PRESETS = [
         { bands: [2, 4, 12] },
@@ -139,6 +154,78 @@
     function clearAll() {
         selected.clear();
         update();
+    }
+
+    function selectedToHex(selectedSet, selectedSetSize) {
+        if (selectedSetSize === 0) {
+            return '0x0';
+        }
+
+        let maxBand = 0;
+        selectedSet.forEach(function(band) {
+            if (band > maxBand) {
+                maxBand = band;
+            }
+        });
+
+        const numDigits = Math.ceil(maxBand / 4);
+        const digits = new Array(numDigits).fill(0);
+
+        selectedSet.forEach(function(band) {
+            const bitPos = band - 1;
+            const digitIndex = Math.floor(bitPos / 4);
+            const bitInDigit = bitPos % 4;
+            digits[digitIndex] = digits[digitIndex] | (1 << bitInDigit);
+        });
+
+        let hexStr = '';
+        for (let i = numDigits - 1; i >= 0; i--) {
+            hexStr = hexStr + digits[i].toString(16).toUpperCase();
+        }
+
+        let startIdx = 0;
+        while (startIdx < hexStr.length - 1 && hexStr[startIdx] === '0') {
+            startIdx = startIdx + 1;
+        }
+        hexStr = hexStr.substring(startIdx, hexStr.length);
+
+        return '0x' + hexStr;
+    }
+
+    function parseHexToBands(hexStr, hexStrLength) {
+        const bands = new Set();
+        let startIdx = 0;
+
+        if (hexStrLength >= 2 && hexStr[0] === '0' && (hexStr[1] === 'x' || hexStr[1] === 'X')) {
+            startIdx = 2;
+        }
+
+        const digitChars = hexStr.substring(startIdx, hexStrLength);
+        const digitCount = digitChars.length;
+
+        for (let i = 0; i < digitCount; i++) {
+            const charIndex = digitCount - 1 - i;
+            const nibble = parseInt(digitChars[charIndex], 16);
+            if (isNaN(nibble) === true) {
+                continue;
+            }
+            for (let bit = 0; bit < 4; bit++) {
+                if ((nibble & (1 << bit)) !== 0) {
+                    const bandNum = i * 4 + bit + 1;
+                    if (bandNum >= 1 && bandNum <= MAX_BANDS) {
+                        bands.add(bandNum);
+                    }
+                }
+            }
+        }
+        return bands;
+    }
+
+    function syncFromHex() {
+        const hexInput = document.getElementById('hexInput');
+        const str = hexInput.value.trim();
+        selected = parseHexToBands(str, str.length);
+        update(true, true, true, false);
     }
 
     function parseOctalBitmap(str, str_len) {
@@ -223,7 +310,7 @@
                 }
             }
         }
-        update(true, false, true);
+        update(true, false, true, true);
     }
 
     function parseIndexedBytes(str, str_len) {
@@ -263,10 +350,10 @@
                 }
             }
         }
-        update(true, true, false);
+        update(true, true, false, true);
     }
 
-    function update(updateText = true, updateBitmap = true, updateIndexedBytes = true) {
+    function update(updateText = true, updateBitmap = true, updateIndexedBytes = true, updateHex = true) {
         // Update Buttons
         document.querySelectorAll('.band-btn').forEach(btn => {
             const id = parseInt(btn.innerText);
@@ -309,20 +396,33 @@
             }
         }
 
-        // Generate Bitmap
+        if (updateHex) {
+            if (selected.size === 0) {
+                document.getElementById('hexInput').value = '';
+            } else {
+                document.getElementById('hexInput').value = selectedToHex(selected, selected.size);
+            }
+        }
+
+        // Generate AT Commands
         if (selected.size === 0) {
-            output.innerText = 'AT%XBANDLOCK=1,"0"';
+            nrfOutput.innerText = 'AT%XBANDLOCK=1,"0"';
+            eg91Output.innerText = 'AT+QCFG="band",0,0x0';
             return;
         }
 
         let bits = new Array(MAX_BANDS).fill(0);
-        selected.forEach(b => bits[b-1] = 1);
-        const bitString = bits.reverse().join('').replace(/^0+(?!$)/, ''); // Remove leading zeros
-        output.innerText = `AT%XBANDLOCK=1,"${bitString}"`;
+        selected.forEach(function(b) { bits[b - 1] = 1; });
+        const bitString = bits.reverse().join('').replace(/^0+(?!$)/, '');
+        nrfOutput.innerText = 'AT%XBANDLOCK=1,"' + bitString + '"';
+
+        const hexValue = selectedToHex(selected, selected.size);
+        eg91Output.innerText = 'AT+QCFG="band",0,' + hexValue;
     }
 
-    function copyCommand() {
-        navigator.clipboard.writeText(output.innerText);
+    function copyCommand(elementId) {
+        const el = document.getElementById(elementId);
+        navigator.clipboard.writeText(el.innerText);
         alert("Command copied to clipboard!");
     }
 </script>
