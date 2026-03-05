@@ -1,18 +1,15 @@
-# Bandlock Calculator
+# Band Lock Calculator
 
-A web-based tool for generating `AT%XBANDLOCK` modem commands for Nordic nRF9160 and nRF9161 devices. It converts LTE band selections into the 88-bit binary bitmap format required by the modem.
+A web-based tool for generating AT modem commands from LTE band selections. Supports Nordic nRF9160/nRF9161 and Quectel EG91 devices.
 
-**[Open the Bandlock Calculator](https://barkinglabs.github.io/bandlock-tools/bandlock.html)**
+**[Open the Band Lock Calculator](https://barkinglabs.github.io/bandlock-tools/bandlock.html)**
 
-## Features
+## Supported Devices
 
-- **Band grid** — click to toggle any of the 88 LTE bands
-- **Carrier presets** — one-click configurations for AT&T, Verizon, T-Mobile, and International
-- **Multiple input formats** — all synchronized bidirectionally:
-  - Comma-separated band list (e.g. `1, 2, 3`)
-  - Binary bitmap in octal escape format (e.g. `\237\030\010\013...`)
-  - Indexed byte list in decimal (e.g. `0:159`, `1:24`, ...)
-- **AT command output** — generates a ready-to-use `AT%XBANDLOCK=1,"..."` command
+| Device | Command Format |
+|---|---|
+| Nordic nRF9160 / nRF9161 | `AT%XBANDLOCK=1,"<binary bitmap>"` |
+| Quectel EG91 | `AT+QCFG="band",0,<hex value>` |
 
 ## Carrier Presets
 
@@ -23,3 +20,10 @@ A web-based tool for generating `AT%XBANDLOCK` modem commands for Nordic nRF9160
 | T-Mobile (US) | 2, 4, 12, 25, 66 |
 | International | 1, 2, 3, 4, 5, 8, 12, 13, 20, 25, 26, 28, 66, 85 |
 
+## Input Formats
+
+All input formats sync bidirectionally — changing any one updates all others and the band grid.
+
+## Running Locally
+
+Open `bandlock.html` in any browser. No server required.Everything is contained in a single HTML file.
