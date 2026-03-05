@@ -32,5 +32,4 @@ Example: T-Mobile bands 2, 4, 12, 25, 66 = `0x2000000000100080A`
 
 ## Reference Files
 
-- AT command manual: `quectel_eg800qeg91xq_series_at_commands_manual.md` (in this repo)
-- Firmware carrier definitions: `/Users/ilya/Documents/GitHub/firmware/nrf5_sdk/boards/carrier_def.h`
+- Quectel EG91 AT command manual: `quectel_eg800qeg91xq_series_at_commands_manual.md` (in this repo)
