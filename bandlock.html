@@ -5,64 +5,303 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Band Lock Calculator</title>
     <style>
-        :root { --primary: #005a9c; --bg: #f8f9fa; --dark: #212529; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--dark); max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; }
-        h1 { margin-top: 0; color: var(--primary); font-size: 1.5rem; border-bottom: 2px solid #eee; padding-bottom: 15px; }
-        .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        :root {
+            --primary: #005a9c;
+            --primary-light: #e8f1fa;
+            --bg: #f4f5f7;
+            --surface: #ffffff;
+            --dark: #212529;
+            --text-secondary: #6b7280;
+            --border: #e2e5e9;
+            --success: #16a34a;
+            --success-hover: #15803d;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --terminal-bg: #1a1d23;
+            --terminal-text: #4ade80;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --transition: 0.15s ease;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--dark);
+            max-width: 860px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        .app-header {
+            margin-bottom: 20px;
+        }
+        .app-header h1 {
+            margin: 0 0 4px 0;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+        .app-header .subtitle {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--dark);
+        }
+        .section-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #band-count {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: normal;
+        }
+
         label { font-weight: bold; font-size: 0.9rem; }
-        
-        .band-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)); gap: 6px; margin-bottom: 25px; }
-        .band-btn { padding: 8px 2px; border: 1px solid #dee2e6; background: #fff; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
-        .band-btn:hover { border-color: var(--primary); background: #f0f7ff; }
+
+        .band-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 5px; margin-bottom: 20px; }
+        .band-btn { padding: 8px 2px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 0.85rem; transition: var(--transition); }
+        .band-btn:hover { border-color: var(--primary); background: var(--primary-light); }
         .band-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-        .preset-btn { padding: 6px 12px; font-size: 0.8rem; background: #e9ecef; border: none; border-radius: 20px; cursor: pointer; transition: 0.2s; }
+        .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .preset-btn { padding: 6px 12px; font-size: 0.8rem; background: #e9ecef; border: none; border-radius: 20px; cursor: pointer; transition: var(--transition); }
         .preset-btn:hover { background: #dee2e6; }
         .preset-btn.active { background: var(--primary); color: white; box-shadow: 0 0 0 2px white, 0 0 0 4px var(--primary); }
 
-        input[type="text"], textarea { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 1rem; margin-bottom: 25px; outline: none; box-sizing: border-box; }
+        input[type="text"], textarea { width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem; outline: none; box-sizing: border-box; }
         input[type="text"]:focus, textarea:focus { border-color: var(--primary); }
-        textarea { height: 120px; resize: vertical; font-family: monospace; }
+        textarea { height: 100px; resize: vertical; font-family: monospace; }
 
-        .output-container { background: #212529; color: #00ff41; padding: 20px; border-radius: 8px; position: relative; }
-        .output-label { color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 8px; display: block; }
-        #nrfCommandOutput, #eg91CommandOutput { font-family: monospace; font-size: 1.1rem; word-break: break-all; line-height: 1.4; }
-        
-        .actions { margin-top: 15px; display: flex; gap: 10px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-copy { background: #28a745; color: white; }
-        .btn-copy:hover { background: #218838; }
-        .btn-clear { background: #dc3545; color: white; }
+        .label-row { margin-bottom: 8px; }
+
+        /* Output section */
+        .output-card h2 {
+            margin: 0 0 16px 0;
+            font-size: 1.1rem;
+        }
+        .command-block {
+            background: var(--terminal-bg);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .command-block:last-child {
+            margin-bottom: 0;
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .output-label {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+        #nrfCommandOutput, #eg91CommandOutput {
+            font-family: 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 1.05rem;
+            color: var(--terminal-text);
+            word-break: break-all;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-copy {
+            background: var(--success);
+            color: white;
+        }
+        .btn-copy:hover {
+            background: var(--success-hover);
+        }
+        .btn-clear {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 6px 14px;
+            font-size: 0.8rem;
+        }
+        .btn-clear:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* More Formats section */
+        .advanced-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .advanced-grid .field-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+        .advanced-grid .field-group input,
+        .advanced-grid .field-group textarea {
+            margin-bottom: 0;
+        }
+        .field-full {
+            grid-column: 1 / -1;
+        }
+
+        /* Toast */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            background: var(--dark);
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: toast-in 0.25s ease, toast-out 0.25s ease 2s forwards;
+            pointer-events: auto;
+        }
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes toast-out {
+            from { opacity: 1; }
+            to { opacity: 0; transform: translateY(-8px); }
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+            body { margin: 12px auto; padding: 0 12px; }
+            .card { padding: 16px; }
+            .band-grid { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 4px; }
+            .band-btn { padding: 10px 2px; font-size: 0.8rem; }
+            .presets { flex-direction: column; }
+            .preset-btn { width: 100%; text-align: center; padding: 10px; font-size: 0.85rem; }
+            .advanced-grid { grid-template-columns: 1fr; }
+            .advanced-card summary { padding: 14px 16px; }
+            .advanced-content { padding: 0 16px 16px; }
+            .command-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .btn-copy { width: 100%; text-align: center; }
+            .section-header { flex-wrap: wrap; gap: 8px; }
+            #toast-container { right: 12px; left: 12px; bottom: 16px; }
+            .toast { text-align: center; }
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
+<header class="app-header">
     <h1>Band Lock Calculator</h1>
+    <p class="subtitle">Generate AT commands for nRF9160/9161 and Quectel EG91</p>
+</header>
 
-    <div class="label-row">
-        <label>Fi Carrier Presets:</label>
-    </div>
-    <div class="presets">
-        <button class="preset-btn" onclick="applyPreset([2,4,12])">AT&T (US)</button>
-        <button class="preset-btn" onclick="applyPreset([4,13])">Verizon (US)</button>
-        <button class="preset-btn" onclick="applyPreset([2, 4, 12, 25, 66])">T-Mobile (US)</button>
-        <button class="preset-btn" onclick="applyPreset([1,2,3,4,5,8,12,13,20,25,26,28,66,85])">International</button>
-    </div>
+<main>
+    <!-- Zone 1: Input -->
+    <section class="card" id="input-section">
+        <div class="section-header">
+            <div class="section-header-left">
+                <h2>Select Bands</h2>
+                <span id="band-count">None selected</span>
+            </div>
+            <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+        </div>
 
-    <div class="label-row"><label>Toggle LTE Bands:</label></div>
-    <div id="bandGrid" class="band-grid"></div>
+        <div class="label-row"><label>Fi Carrier Presets:</label></div>
+        <div class="presets">
+            <button class="preset-btn" onclick="applyPreset([2,4,12])">AT&T (US)</button>
+            <button class="preset-btn" onclick="applyPreset([4,13])">Verizon (US)</button>
+            <button class="preset-btn" onclick="applyPreset([2, 4, 12, 25, 66])">T-Mobile (US)</button>
+            <button class="preset-btn" onclick="applyPreset([1,2,3,4,5,8,12,13,20,25,26,28,66,85])">International</button>
+        </div>
 
-    <div class="label-row"><label>Comma Separated List:</label></div>
-    <input type="text" id="manualInput" placeholder="Enter bands (e.g. 1, 2, 3...)" oninput="syncFromInput()">
+        <div class="label-row"><label>Toggle LTE Bands:</label></div>
+        <div id="bandGrid" class="band-grid"></div>
 
-    <div class="label-row"><label>Binary Bitmap (octal escape format):</label></div>
-    <input type="text" id="bitmapInput" placeholder='e.g. \237\030\010\013\000\000\000\000\002\000\020' oninput="syncFromBitmap()">
+        <div class="label-row"><label>Or enter bands manually:</label></div>
+        <input type="text" id="manualInput" placeholder="e.g. 1, 2, 3..." oninput="syncFromInput()">
+    </section>
 
-    <div class="label-row"><label>Indexed Byte List (decimal):</label></div>
-    <textarea id="indexedBytesInput" placeholder="0:159
+    <!-- Zone 2: Output -->
+    <section class="card output-card" id="output-section">
+        <h2>AT Commands</h2>
+        <div class="command-block">
+            <div class="command-header">
+                <span class="output-label">nRF9160 / nRF9161</span>
+                <button class="btn btn-copy" onclick="copyCommand('nrfCommandOutput')">Copy</button>
+            </div>
+            <div id="nrfCommandOutput">AT%XBANDLOCK=1,"0"</div>
+        </div>
+        <div class="command-block">
+            <div class="command-header">
+                <span class="output-label">Quectel EG91</span>
+                <button class="btn btn-copy" onclick="copyCommand('eg91CommandOutput')">Copy</button>
+            </div>
+            <div id="eg91CommandOutput">AT+QCFG="band",0,0x0</div>
+        </div>
+    </section>
+
+    <!-- Zone 3: More Formats -->
+    <section class="card" id="advanced-section">
+        <h2 style="margin: 0 0 16px 0; font-size: 1.1rem;">More Formats</h2>
+        <div class="advanced-grid">
+                <div class="field-group">
+                    <label>Binary Bitmap (octal escape):</label>
+                    <input type="text" id="bitmapInput" placeholder='e.g. \237\030\010\013\000\000\000\000\002\000\020' oninput="syncFromBitmap()">
+                </div>
+                <div class="field-group">
+                    <label>Hex Band Value:</label>
+                    <input type="text" id="hexInput" placeholder='e.g. 0x2000000000100080A' oninput="syncFromHex()">
+                </div>
+                <div class="field-group field-full">
+                    <label>Indexed Byte List (decimal):</label>
+                    <textarea id="indexedBytesInput" placeholder="0:159
 1:24
 2:8
 3:11
@@ -73,30 +312,12 @@
 8:2
 9:0
 10:16" oninput="syncFromIndexedBytes()"></textarea>
+                </div>
+            </div>
+    </section>
+</main>
 
-    <div class="label-row"><label>Hex Band Value:</label></div>
-    <input type="text" id="hexInput" placeholder='e.g. 0x2000000000100080A' oninput="syncFromHex()">
-
-    <div class="output-container">
-        <span class="output-label">nRF9160 / nRF9161</span>
-        <div id="nrfCommandOutput">AT%XBANDLOCK=1,"0"</div>
-        <div class="actions">
-            <button class="btn btn-copy" onclick="copyCommand('nrfCommandOutput')">Copy Command</button>
-        </div>
-    </div>
-
-    <div class="output-container" style="margin-top: 10px;">
-        <span class="output-label">Quectel EG91</span>
-        <div id="eg91CommandOutput">AT+QCFG="band",0,0x0</div>
-        <div class="actions">
-            <button class="btn btn-copy" onclick="copyCommand('eg91CommandOutput')">Copy Command</button>
-        </div>
-    </div>
-
-    <div style="margin-top: 10px;">
-        <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
-    </div>
-</div>
+<div id="toast-container" aria-live="polite"></div>
 
 <script>
     const MAX_BANDS = 88;
@@ -136,7 +357,11 @@
     }
 
     function toggleBand(num) {
-        selected.has(num) ? selected.delete(num) : selected.add(num);
+        if (selected.has(num) === true) {
+            selected.delete(num);
+        } else {
+            selected.add(num);
+        }
         update();
     }
 
@@ -371,6 +596,18 @@
             }
         }
 
+        // Update Band Count Badge
+        const countBadge = document.getElementById('band-count');
+        if (selected.size === 0) {
+            countBadge.textContent = 'None selected';
+        } else {
+            let suffix = 's';
+            if (selected.size === 1) {
+                suffix = '';
+            }
+            countBadge.textContent = selected.size.toString(10) + ' band' + suffix + ' selected';
+        }
+
         // Update Text Input
         if (updateText) {
             input.value = Array.from(selected).sort((a,b) => a-b).join(', ');
@@ -422,8 +659,26 @@
 
     function copyCommand(elementId) {
         const el = document.getElementById(elementId);
-        navigator.clipboard.writeText(el.innerText);
-        alert("Command copied to clipboard!");
+        const text = el.innerText;
+        if (text.length === 0) {
+            return;
+        }
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('Command copied to clipboard');
+        });
+    }
+
+    function showToast(message) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(function() {
+            if (toast.parentNode !== null) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 2500);
     }
 </script>
 
